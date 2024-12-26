@@ -1,4 +1,4 @@
-using MQTTnet;
+п»їusing MQTTnet;
 using MQTTnet.Client;
 using System;
 using System.Text;
@@ -11,26 +11,26 @@ namespace WinFormsApp1
 {
     public partial class Form1 : Form
     {
-        private IMqttClient _mqttClient; // MQTT клиент
-        private MqttClientOptions _mqttOptions; // Настройки клиента
+        private IMqttClient _mqttClient; // MQTT РєР»РёРµРЅС‚
+        private MqttClientOptions _mqttOptions; // РќР°СЃС‚СЂРѕР№РєРё РєР»РёРµРЅС‚Р°
         private System.Windows.Forms.Timer _dataGenerationTimer;
-        private double _soilMoisture; // Показатель влажности почвы (в процентах)
-        private bool _pumpActive; // Состояние насоса (актуатора)
-        private bool _autoMode; // Режим работы: true - автоматический, false - ручной
+        private double _soilMoisture; // РџРѕРєР°Р·Р°С‚РµР»СЊ РІР»Р°Р¶РЅРѕСЃС‚Рё РїРѕС‡РІС‹ (РІ РїСЂРѕС†РµРЅС‚Р°С…)
+        private bool _pumpActive; // РЎРѕСЃС‚РѕСЏРЅРёРµ РЅР°СЃРѕСЃР° (Р°РєС‚СѓР°С‚РѕСЂР°)
+        private bool _autoMode; // Р РµР¶РёРј СЂР°Р±РѕС‚С‹: true - Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№, false - СЂСѓС‡РЅРѕР№
         private TelegramBotClient _telegramBot; // Telegram Bot
-        private string _telegramToken = "7714274821:AAGhmkMCCdXuy85HFkGbafPbljZeu52HJUw";
-        private long _chatId; // ID чата для отправки сообщений
+        private string _telegramToken = "С‚РѕРєРµРЅРјР±РѕС‚Р°";
+        private long _chatId; // ID С‡Р°С‚Р° РґР»СЏ РѕС‚РїСЂР°РІРєРё СЃРѕРѕР±С‰РµРЅРёР№
 
         public Form1()
         {
             InitializeComponent();
-            _soilMoisture = 40; // Начальное значение влажности
-            _autoMode = false;  // Режим по умолчанию - ручной
+            _soilMoisture = 40; // РќР°С‡Р°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ РІР»Р°Р¶РЅРѕСЃС‚Рё
+            _autoMode = false;  // Р РµР¶РёРј РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ - СЂСѓС‡РЅРѕР№
             _pumpActive = false;
             InitializeTimer();            
-            InitializeMqttClient(); // Инициализация MQTT клиента
+            InitializeMqttClient(); // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ MQTT РєР»РёРµРЅС‚Р°
             //EnsureMqttConnection();
-            InitializeTelegramBot(); // Инициализация Telegram бота
+            InitializeTelegramBot(); // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ Telegram Р±РѕС‚Р°
         }
 
         private async void InitializeMqttClient()
@@ -38,81 +38,81 @@ namespace WinFormsApp1
             var factory = new MqttFactory();
             _mqttClient = factory.CreateMqttClient();
             _mqttOptions = new MqttClientOptionsBuilder()
-                .WithTcpServer("broker.emqx.io", 1883) // Используем открытый сервер Mosquitto
+                .WithTcpServer("broker.emqx.io", 1883) // РСЃРїРѕР»СЊР·СѓРµРј РѕС‚РєСЂС‹С‚С‹Р№ СЃРµСЂРІРµСЂ Mosquitto
                 .Build();
 
-            // Асинхронно подключаемся к серверу
+            // РђСЃРёРЅС…СЂРѕРЅРЅРѕ РїРѕРґРєР»СЋС‡Р°РµРјСЃСЏ Рє СЃРµСЂРІРµСЂСѓ
             try
             {
                 await _mqttClient.ConnectAsync(_mqttOptions);
                 Console.WriteLine("MQTT client connected.");
-                await SubscribeToTopics(); // Подписываемся на топики после подключения
+                await SubscribeToTopics(); // РџРѕРґРїРёСЃС‹РІР°РµРјСЃСЏ РЅР° С‚РѕРїРёРєРё РїРѕСЃР»Рµ РїРѕРґРєР»СЋС‡РµРЅРёСЏ
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Failed to connect to MQTT broker: {ex.Message}");
             }
 
-            // Обработчик получения сообщений
+            // РћР±СЂР°Р±РѕС‚С‡РёРє РїРѕР»СѓС‡РµРЅРёСЏ СЃРѕРѕР±С‰РµРЅРёР№
             _mqttClient.ApplicationMessageReceivedAsync += async e =>
             {
                 var message = Encoding.UTF8.GetString(e.ApplicationMessage.Payload);
                 Console.WriteLine($"Received message: {message}");
 
-                // Обработка сообщений для управления насосом и режимом
+                // РћР±СЂР°Р±РѕС‚РєР° СЃРѕРѕР±С‰РµРЅРёР№ РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ РЅР°СЃРѕСЃРѕРј Рё СЂРµР¶РёРјРѕРј
                 if (message == "MANUAL_ON")
                 {
                     _pumpActive = true;
-                    await SendTelegramMessage("Насос включен.");
+                    await SendTelegramMessage("РќР°СЃРѕСЃ РІРєР»СЋС‡РµРЅ.");
                 }
                 else if (message == "MANUAL_OFF")
                 {
                     _pumpActive = false;
-                    await SendTelegramMessage("Насос выключен.");
+                    await SendTelegramMessage("РќР°СЃРѕСЃ РІС‹РєР»СЋС‡РµРЅ.");
                 }
                 else if (message == "AUTO_MODE")
                 {
                     _autoMode = true;
-                    await SendTelegramMessage("Переключен в автоматический режим.");
+                    await SendTelegramMessage("РџРµСЂРµРєР»СЋС‡РµРЅ РІ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№ СЂРµР¶РёРј.");
                 }
                 else if (message == "MANUAL_MODE")
                 {
                     _autoMode = false;
-                    await SendTelegramMessage("Переключен в ручной режим.");
+                    await SendTelegramMessage("РџРµСЂРµРєР»СЋС‡РµРЅ РІ СЂСѓС‡РЅРѕР№ СЂРµР¶РёРј.");
                 }
 
-                // Обновление состояния UI (для отображения нового состояния)
+                // РћР±РЅРѕРІР»РµРЅРёРµ СЃРѕСЃС‚РѕСЏРЅРёСЏ UI (РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РЅРѕРІРѕРіРѕ СЃРѕСЃС‚РѕСЏРЅРёСЏ)
                 UpdateUI();
             };
         }
 
         private async Task SubscribeToTopics()
         {
-            // Подписка на топики для управления насосом и режимом
+            // РџРѕРґРїРёСЃРєР° РЅР° С‚РѕРїРёРєРё РґР»СЏ СѓРїСЂР°РІР»РµРЅРёСЏ РЅР°СЃРѕСЃРѕРј Рё СЂРµР¶РёРјРѕРј
             await _mqttClient.SubscribeAsync(new MqttTopicFilterBuilder().WithTopic("iot/device/control").Build());
         }
 
         private void InitializeTimer()
         {
             _dataGenerationTimer = new System.Windows.Forms.Timer();
-            _dataGenerationTimer.Interval = 1000; // Генерация данных каждые 1 секунду
+            _dataGenerationTimer.Interval = 1000; // Р“РµРЅРµСЂР°С†РёСЏ РґР°РЅРЅС‹С… РєР°Р¶РґС‹Рµ 1 СЃРµРєСѓРЅРґСѓ
             _dataGenerationTimer.Tick += GenerateData;
             _dataGenerationTimer.Start();
         }
 
         private void GenerateData(object sender, EventArgs e)
         {
-            // Логика изменения показаний датчиков
+            // Р›РѕРіРёРєР° РёР·РјРµРЅРµРЅРёСЏ РїРѕРєР°Р·Р°РЅРёР№ РґР°С‚С‡РёРєРѕРІ
             if (_pumpActive)
             {
-                _soilMoisture = Math.Min(100, _soilMoisture + 5); // Насос увеличивает влажность почвы
+                _soilMoisture = Math.Min(100, _soilMoisture + 5); // РќР°СЃРѕСЃ СѓРІРµР»РёС‡РёРІР°РµС‚ РІР»Р°Р¶РЅРѕСЃС‚СЊ РїРѕС‡РІС‹
             }
             else
             {
-                _soilMoisture = Math.Max(0, _soilMoisture - 2); // Почва высыхает со временем
+                _soilMoisture = Math.Max(0, _soilMoisture - 2); // РџРѕС‡РІР° РІС‹СЃС‹С…Р°РµС‚ СЃРѕ РІСЂРµРјРµРЅРµРј
             }
 
-            // В автоматическом режиме насос включается, если влажность ниже 30%
+            // Р’ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРј СЂРµР¶РёРјРµ РЅР°СЃРѕСЃ РІРєР»СЋС‡Р°РµС‚СЃСЏ, РµСЃР»Рё РІР»Р°Р¶РЅРѕСЃС‚СЊ РЅРёР¶Рµ 30%
             if (_autoMode && _soilMoisture < 30)
             {
                 _pumpActive = true;
@@ -122,10 +122,10 @@ namespace WinFormsApp1
                 _pumpActive = false;
             }
 
-            // Публикуем данные на MQTT сервер
+            // РџСѓР±Р»РёРєСѓРµРј РґР°РЅРЅС‹Рµ РЅР° MQTT СЃРµСЂРІРµСЂ
             PublishSensorData();
 
-            UpdateUI(); // Обновляем пользовательский интерфейс
+            UpdateUI(); // РћР±РЅРѕРІР»СЏРµРј РїРѕР»СЊР·РѕРІР°С‚РµР»СЊСЃРєРёР№ РёРЅС‚РµСЂС„РµР№СЃ
         }
 
         private async void PublishSensorData()
@@ -209,30 +209,30 @@ namespace WinFormsApp1
                 return;
             }
 
-            // Обновляем отображение данных
-            SoilMoisture.Text = $"Влажность почвы: {_soilMoisture}%";
-            PumpStatus.Text = _pumpActive ? "Насос работает" : "Насос не работает";
-            ModeStatus.Text = _autoMode ? "Режим: Автоматический" : "Режим: Ручной";
+            // РћР±РЅРѕРІР»СЏРµРј РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ РґР°РЅРЅС‹С…
+            SoilMoisture.Text = $"Р’Р»Р°Р¶РЅРѕСЃС‚СЊ РїРѕС‡РІС‹: {_soilMoisture}%";
+            PumpStatus.Text = _pumpActive ? "РќР°СЃРѕСЃ СЂР°Р±РѕС‚Р°РµС‚" : "РќР°СЃРѕСЃ РЅРµ СЂР°Р±РѕС‚Р°РµС‚";
+            ModeStatus.Text = _autoMode ? "Р РµР¶РёРј: РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№" : "Р РµР¶РёРј: Р СѓС‡РЅРѕР№";
         }
 
         private async void InitializeTelegramBot()
         {
             _telegramBot = new TelegramBotClient(_telegramToken);
 
-            // Запускаем асинхронный цикл для получения сообщений
+            // Р—Р°РїСѓСЃРєР°РµРј Р°СЃРёРЅС…СЂРѕРЅРЅС‹Р№ С†РёРєР» РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ СЃРѕРѕР±С‰РµРЅРёР№
             Task.Run(async () => await StartReceivingUpdatesAsync());
         }
 
         private async Task StartReceivingUpdatesAsync()
         {
-            // Получаем обновления для бота
+            // РџРѕР»СѓС‡Р°РµРј РѕР±РЅРѕРІР»РµРЅРёСЏ РґР»СЏ Р±РѕС‚Р°
             var offset = 0;
             while (true)
             {
                 var updates = await _telegramBot.GetUpdatesAsync(offset);
                 foreach (var update in updates)
                 {
-                    offset = update.Id + 1; // Обновляем смещение
+                    offset = update.Id + 1; // РћР±РЅРѕРІР»СЏРµРј СЃРјРµС‰РµРЅРёРµ
 
                     if (update.Message != null)
                     {
@@ -240,45 +240,45 @@ namespace WinFormsApp1
                     }
                 }
 
-                // Пауза перед следующей проверкой обновлений
+                // РџР°СѓР·Р° РїРµСЂРµРґ СЃР»РµРґСѓСЋС‰РµР№ РїСЂРѕРІРµСЂРєРѕР№ РѕР±РЅРѕРІР»РµРЅРёР№
                 await Task.Delay(1000);
             }
         }
 
         private async Task HandleMessageAsync(Telegram.Bot.Types.Message message)
         {
-            // Обрабатываем полученные команды
+            // РћР±СЂР°Р±Р°С‚С‹РІР°РµРј РїРѕР»СѓС‡РµРЅРЅС‹Рµ РєРѕРјР°РЅРґС‹
             if (message.Text == "/status")
             {
-                // Отправка текущего статуса через Telegram
-                string status = $"Влажность почвы: {_soilMoisture}%\n" +
-                                $"Насос: {(_pumpActive ? "Включен" : "Выключен")}\n" +
-                                $"Режим: {(_autoMode ? "Автоматический" : "Ручной")}";
+                // РћС‚РїСЂР°РІРєР° С‚РµРєСѓС‰РµРіРѕ СЃС‚Р°С‚СѓСЃР° С‡РµСЂРµР· Telegram
+                string status = $"Р’Р»Р°Р¶РЅРѕСЃС‚СЊ РїРѕС‡РІС‹: {_soilMoisture}%\n" +
+                                $"РќР°СЃРѕСЃ: {(_pumpActive ? "Р’РєР»СЋС‡РµРЅ" : "Р’С‹РєР»СЋС‡РµРЅ")}\n" +
+                                $"Р РµР¶РёРј: {(_autoMode ? "РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№" : "Р СѓС‡РЅРѕР№")}";
                 await _telegramBot.SendTextMessageAsync(message.Chat, status);
             }
             else if (message.Text == "/manual_on")
             {
                 //_pumpActive = true;
-                await SendTelegramMessage("Насос включен.");
-                await ControlPumpOnMqtt(); // Отправляем команду в MQTT для включения насоса
+                await SendTelegramMessage("РќР°СЃРѕСЃ РІРєР»СЋС‡РµРЅ.");
+                await ControlPumpOnMqtt(); // РћС‚РїСЂР°РІР»СЏРµРј РєРѕРјР°РЅРґСѓ РІ MQTT РґР»СЏ РІРєР»СЋС‡РµРЅРёСЏ РЅР°СЃРѕСЃР°
             }
             else if (message.Text == "/manual_off")
             {
                 //_pumpActive = false;
-                await SendTelegramMessage("Насос выключен.");
-                await ControlPumpOffMqtt(); // Отправляем команду в MQTT для выключения насоса
+                await SendTelegramMessage("РќР°СЃРѕСЃ РІС‹РєР»СЋС‡РµРЅ.");
+                await ControlPumpOffMqtt(); // РћС‚РїСЂР°РІР»СЏРµРј РєРѕРјР°РЅРґСѓ РІ MQTT РґР»СЏ РІС‹РєР»СЋС‡РµРЅРёСЏ РЅР°СЃРѕСЃР°
             }
             else if (message.Text == "/auto_mode")
             {
                 //_autoMode = true;
-                await SendTelegramMessage("Переключен в автоматический режим.");
-                await SetAutoModeMqtt(); // Отправляем команду в MQTT для включения автоматического режима
+                await SendTelegramMessage("РџРµСЂРµРєР»СЋС‡РµРЅ РІ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№ СЂРµР¶РёРј.");
+                await SetAutoModeMqtt(); // РћС‚РїСЂР°РІР»СЏРµРј РєРѕРјР°РЅРґСѓ РІ MQTT РґР»СЏ РІРєР»СЋС‡РµРЅРёСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРіРѕ СЂРµР¶РёРјР°
             }
             else if (message.Text == "/manual_mode")
             {
                 //_autoMode = false;
-                await SendTelegramMessage("Переключен в ручной режим.");
-                await SetManualModeMqtt(); // Отправляем команду в MQTT для включения ручного режима
+                await SendTelegramMessage("РџРµСЂРµРєР»СЋС‡РµРЅ РІ СЂСѓС‡РЅРѕР№ СЂРµР¶РёРј.");
+                await SetManualModeMqtt(); // РћС‚РїСЂР°РІР»СЏРµРј РєРѕРјР°РЅРґСѓ РІ MQTT РґР»СЏ РІРєР»СЋС‡РµРЅРёСЏ СЂСѓС‡РЅРѕРіРѕ СЂРµР¶РёРјР°
             }
         }
 
@@ -293,10 +293,10 @@ namespace WinFormsApp1
 
         private void btnToggleMode_Click(object sender, EventArgs e)
         {
-            // Переключаем режим (автоматический/ручной)
+            // РџРµСЂРµРєР»СЋС‡Р°РµРј СЂРµР¶РёРј (Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРёР№/СЂСѓС‡РЅРѕР№)
             _autoMode = !_autoMode;
 
-            // В автоматическом режиме насос включается, если влажность почвы ниже 30%
+            // Р’ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРѕРј СЂРµР¶РёРјРµ РЅР°СЃРѕСЃ РІРєР»СЋС‡Р°РµС‚СЃСЏ, РµСЃР»Рё РІР»Р°Р¶РЅРѕСЃС‚СЊ РїРѕС‡РІС‹ РЅРёР¶Рµ 30%
             if (_autoMode && _soilMoisture < 30)
             {
                 _pumpActive = true;
@@ -305,7 +305,7 @@ namespace WinFormsApp1
 
         private void btnTogglePump_Click(object sender, EventArgs e)
         {
-            // Ручной режим: управляем насосом вручную
+            // Р СѓС‡РЅРѕР№ СЂРµР¶РёРј: СѓРїСЂР°РІР»СЏРµРј РЅР°СЃРѕСЃРѕРј РІСЂСѓС‡РЅСѓСЋ
             _pumpActive = !_pumpActive;
         }
     }
