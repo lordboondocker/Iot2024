@@ -18,8 +18,8 @@ namespace WinFormsApp1
         private bool _pumpActive; // Состояние насоса (актуатора)
         private bool _autoMode; // Режим работы: true - автоматический, false - ручной
         private TelegramBotClient _telegramBot; // Telegram Bot
-        private string _telegramToken = "токенмбота";
-        private long _chatId; // ID чата для отправки сообщений
+        private string _telegramToken = "2222222222:22222uDr0AMhtEp9o22222LCsvYXC0QFt3U";
+        private long _chatId = 2222222222; // ID чата для отправки сообщений
 
         public Form1()
         {
@@ -27,9 +27,8 @@ namespace WinFormsApp1
             _soilMoisture = 40; // Начальное значение влажности
             _autoMode = false;  // Режим по умолчанию - ручной
             _pumpActive = false;
-            InitializeTimer();            
-            InitializeMqttClient(); // Инициализация MQTT клиента
-            //EnsureMqttConnection();
+            InitializeTimer();
+            InitializeMqttClient(); // Инициализация MQTT клиента            
             InitializeTelegramBot(); // Инициализация Telegram бота
         }
 
@@ -63,22 +62,22 @@ namespace WinFormsApp1
                 if (message == "MANUAL_ON")
                 {
                     _pumpActive = true;
-                    await SendTelegramMessage("Насос включен.");
+                    //await SendTelegramMessage("Насос включен.");
                 }
                 else if (message == "MANUAL_OFF")
                 {
                     _pumpActive = false;
-                    await SendTelegramMessage("Насос выключен.");
+                    //await SendTelegramMessage("Насос выключен.");
                 }
                 else if (message == "AUTO_MODE")
                 {
                     _autoMode = true;
-                    await SendTelegramMessage("Переключен в автоматический режим.");
+                    //await SendTelegramMessage("Переключен в автоматический режим.");
                 }
                 else if (message == "MANUAL_MODE")
                 {
                     _autoMode = false;
-                    await SendTelegramMessage("Переключен в ручной режим.");
+                    //await SendTelegramMessage("Переключен в ручной режим.");
                 }
 
                 // Обновление состояния UI (для отображения нового состояния)
@@ -198,7 +197,7 @@ namespace WinFormsApp1
             }
         }
 
-        
+
 
 
         private void UpdateUI()
@@ -220,7 +219,7 @@ namespace WinFormsApp1
             _telegramBot = new TelegramBotClient(_telegramToken);
 
             // Запускаем асинхронный цикл для получения сообщений
-            Task.Run(async () => await StartReceivingUpdatesAsync());
+            await Task.Run(async () => StartReceivingUpdatesAsync());
         }
 
         private async Task StartReceivingUpdatesAsync()
@@ -247,6 +246,7 @@ namespace WinFormsApp1
 
         private async Task HandleMessageAsync(Telegram.Bot.Types.Message message)
         {
+
             // Обрабатываем полученные команды
             if (message.Text == "/status")
             {
@@ -287,7 +287,7 @@ namespace WinFormsApp1
         {
             if (_chatId != 0)
             {
-                await _telegramBot.SendTextMessageAsync(_chatId, message);
+                await _telegramBot.SendMessage(_chatId, message);
             }
         }
 
